@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Audio Stream Fourier Spectrum Visualization</title>
+</head>
+<body>
+  <canvas id="audioCanvas" width="800" height="200"></canvas>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(function(stream) {
+          const audioContext = new AudioContext();
+          const source = audioContext.createMediaStreamSource(stream);
+          const analyser = audioContext.createAnalyser();
+          analyser.fftSize = 2048;
+
+          source.connect(analyser);
+
+          const canvas = document.getElementById('audioCanvas');
+          const canvasCtx = canvas.getContext('2d');
+
+          function draw() {
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            analyser.getByteFrequencyData(dataArray);
+
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const barWidth = (canvas.width / bufferLength) * 2.5;
+            let barHeight;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+              barHeight = dataArray[i];
+
+              canvasCtx.fillStyle = `rgb(${barHeight + 100}, 50, 50)`;
+              canvasCtx.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
+
+              x += barWidth + 1;
+            }
+
+            requestAnimationFrame(draw);
+          }
+
+          draw();
+        })
+        .catch(function(err) {
+          console.error('Error accessing the microphone: ', err);
+        });
+    });
+  </script>
+</body>
+</html>
